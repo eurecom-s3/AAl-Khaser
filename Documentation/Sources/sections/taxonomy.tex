@@ -1,0 +1,105 @@
+% \section{Taxonomy of the Android Evasive Controls}\label{sec:taxonomy}
+
+\section{Environment verification}
+Environment checks aim to detect the reliability of the environment in which apps are installed.
+
+\subsection{Root detection}
+Android has been designed to work in a way that the end user does not need to use the root account, so its usage is turned off by default.
+A method known as \textit{rooting} allows an end user to get super-user access to an Android smartphone. 
+With super-user permissions, it is possible to alter system settings, access private areas in the primary memory, and install specialized apps.
+Therefore, some anomalous executables that need root permissions to run correctly may indicate a counterfeit environment, such as a sandbox.
+Of all the possible controls, the most common are verifying if the \texttt{su} or \texttt{busybox} executables are present in the file system and checking if well-known paths that are usually read-only have the write permission.
+Obtaining root permissions also allows the end user to use a debugger or use dynamic analysis tools.
+
+\subsection{Debugging detection} 
+A debugger introduces changes to the memory space of the target app's processes and may impact the execution time of certain code snippets.
+Thus, anti-debugging techniques can detect (looking for specific artifacts) or prevent the app from being debugged.
+
+\subsection{Hook detection}
+Anti-hooking controls aim to detect dynamic binary instrumentation tools (e.g., Xposed and Frida) that can hook and tamper with the execution flow of an app.
+The simplest way to detect them is to scan package names, files, or binaries to look for well-known frameworks' resources.
+However, each dynamic analysis framework works differently and may require specific detection techniques.
+For instance, Xposed is an Android app that applies modules directly to the Android OS ROM and requires root privileges. At the same time, Frida injects a JavaScript engine into the instrumented process. 
+
+\subsection{Emulator detection}
+Anti-emulation techniques check whether an app is running on an actual device.
+For example, an emulated environment may not provide the same hardware functionalities of an actual phone, such as sensors (i.e., gyroscope, accelerometer), or some particular artifacts may or may not be present (e.g., different files or files' content, Android system properties).
+For instance, the Android emulator is built on top of QEMU.
+Some of them may not have the full support with the Google Play Services (e.g., Genymotion) or changed some system property (e.g., \texttt{ro.build.tag}).
+
+\subsection{Memory integrity verification}
+This type of evasive control aims to verify the integrity of the app's memory space against memory patches applied at runtime. 
+For instance, hooks to C/C++ code can be installed by overwriting function pointers in memory or patching parts of the function code itself (e.g., inline hooking by modifying the function prologue). Thus, an app can check the integrity of the respective memory regions to detect any alteration.
+
+\subsection{App-level virtualization detection}
+Android virtualization is a recent technique that enables an app (\textit{container}) to create a virtual environment in which other apps (\textit{plugins}) can run while fully preserving their functionalities.
+The container app acts like a proxy, intercepting each request going towards the plugin app to the Android OS and vice versa to fool the OS that such a request comes from the container.
+Thus, anti-virtualization techniques aim to detect such virtual environment (i.e., container app) in which the app is executing. 
+For instance, an app can verify its UID, the number of running processes, and the object instance of the Android API clients.
+
+\subsection{Network artifact detection}
+This type of evasive control aims to inspect the network interfaces to detect artifacts, such as unreal interface names or adb connected over the network.
+Moreover, several procedures aim to analyze the app's network traffic to understand its behavior.
+Thus, evasive apps may also check for VPNs or proxies.
+
+
+\section{APK tampering verification}
+% anti-tampering, e.g., signature check,
+Anti-tampering techniques detect any modification on the original app during its execution.
+If modifications are detected, the app can take evasive actions, such as turning off certain features or terminating its execution.
+
+\subsection{Signature checking} 
+Each Android app is distributed and installed as an Android PacKage (APK) file.
+In a nutshell, an APK file is a ZIP archive containing all the necessary files to run the first execution of the app, i.e., compiled code, resources (e.g., images for the user interface), and a \textit{Manifest} file.
+To ensure the APK integrity, it is signed with the developer's private key and contains the corresponding public certificate of the developer.
+During the installation process, the Android OS verifies the integrity of the APK and its resources.
+It is worth noticing that this mechanism does not provide any authentication guarantee, as the developer certificate does not need to be issued by any trusted certificate authority.
+Thus, this control checks if the certificate is the expected one.
+
+\subsection{Code integrity} 
+It checks whether some code or resource has been tampered with by computing its signature at runtime (w.r.t. pre-computed and hardcoded valued). 
+
+\subsection{Installer verification}
+Since API level 5, the Android Package Manager also stores information on which `installer' app (e.g., Google Play Store or Samsung Store) was used to start installing a target app.
+It checks the package name of the installer app to verify whether the app has been installed from the expected app store.
+Tampered apps are more likely to be distributed on unofficial app stores that differ from the original.
+Moreover, an APK can also be downloaded directly from a website, and thus in this particular case, the installer app can be a browser or a file manager.
+
+\section{High-level verification}
+
+\subsection{SafetyNet attestation \& Integrity API}
+SafetyNet is a platform security service offered by Google that provides a set of APIs to help protect apps against security threats, such as device tampering and potentially harmful apps.
+From a technical standpoint, every service is related to a different API.
+For instance, to verify the integrity of a device, an app leverages the Attestation API by invoking the \texttt{attest} method of the SafetyNet client.
+Contrary, to check if malicious apps are installed on the device, an app invokes the \texttt{listHarmfulApps} API.
+
+Starting January 2023, the SafetyNet attestation is deprecated and replaced by the Play Integrity API.
+It is an enhanced security mechanism that verifies the app's integrity to defend against tampering and redistribution of your app and the environment in which it is running.
+Moreover, it consolidates multiple integrity offerings (including the ones offered by SafetyNet) under a single API.
+
+\subsection{Interaction with a human being}
+% https://www.securitee.org/files/androidsandboxes_ndss2022.pdf
+Sophisticated Android malware sandboxes attempt to prevent sandbox detection by patching runtime properties, but they neglect other aspects, such as simulating real user behavior.
+In particular, user-related artifacts (e.g., number of photos and songs, list of contacts) can be abused to distinguish an actual device from a sandbox environment.
+
+
+\section{Direct and Indirect techniques}
+This further orthogonal subdivision based on the type of data that an evasive technique implementation verifies is crucial. 
+\emph{Direct} evasive techniques (DET) retrieve specific data which can be directly used in evasive controls. In contrast, the data returned using \emph{indirect} evasive techniques (IET) need further processing to find the information necessary for detecting an analysis environment.
+
+We clarify this concept with an example.
+Magisk is a famous open-source software for customizing Android. 
+It needs root access and is installed as a regular Android app.
+To verify if this app is installed, a developer can interact with the \texttt{getPackageInfo} or the \texttt{getInstalledApplications} methods of the \texttt{PackageManager} (having previously correctly specified permissions in the Manifest file).
+The former accepts the package name of the target app, while the second does not take any argument as input and returns a list of \textit{all} apps installed for the current user.
+Thus, if a sample invokes the \texttt{getPackageInfo} method with the \texttt{com.topjohnwu.magisk} argument, there is no doubt that it is checking for the presence of Magisk; this is a DET. 
+On the other hand, if a sample retrieves the app list invoking \texttt{getInstalledApplications}, it can look for the Magisk package name in several stealth ways (e.g., hash comparison). Hence, this is an IET.
+Therefore, if an analysis system detects a DET, it will always be a true positive, while the presence of an IET can also be a false positive. 
+
+Each implementation has a unique identifier, consisting of the concatenations of three strings (the macro technique, the goal, and the type of control) with the symbol ``-''. % (\fix{see Table~\ref{tab:all_evasive} in Appendix}). 
+For instance, the ROOT-SU-FILE denotes a \textit{root detection} (macro technique) evasive control, which aims to verify the presence of the \texttt{su} (goal) binary \textit{file} (type of control). 
+
+Table~\ref{tab:all_evasive} recaps the categorization of Android evasive controls, highlighting possible DET and IET implementations. 
+
+
+

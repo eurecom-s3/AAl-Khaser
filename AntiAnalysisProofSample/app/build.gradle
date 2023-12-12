@@ -1,0 +1,95 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    compileSdkVersion 33
+    defaultConfig {
+        applicationId "com.experiments.antianalysisproofsample"
+        minSdkVersion 23
+        targetSdkVersion 33
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        /*externalNativeBuild {
+            cmake {
+                cppFlags ''
+                // arguments '-DANDROID_ARM_MODE=arm'
+            }
+        }
+        ndk{
+            ldLibs "log"
+            abiFilters 'armeabi-v7a'
+        }*/
+    }
+
+    // TODO: Update the needed variable (e.g., signature, installer name, SafetyNet Token, ...)
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField("String", "API_KEY", "\"YYYY\"")
+            buildConfigField("String", "INSTALLER_PKG_NAME", "null")
+            buildConfigField("String", "SIGNATURE_BASE64", "\"XXXX\"")
+        }
+        debug {
+            buildConfigField("String", "API_KEY", "\"YYYY\"")
+            buildConfigField("String", "INSTALLER_PKG_NAME", "null")
+            buildConfigField("String", "SIGNATURE_BASE64", "\"XXXX\"")
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    externalNativeBuild {
+        cmake {
+            path file('src/main/cpp/CMakeLists.txt')
+            version '3.10.2'
+        }
+    }
+
+    buildFeatures {
+        viewBinding true
+        buildConfig true
+    }
+
+    /*defaultConfig {
+        buildConfigField("String", "API_KEY", "\"AIzaSyAik5iNWRz8Y8zKCY-3rwlHSTf4p1t0o0E\"")
+    }*/
+
+    // https://stackoverflow.com/questions/44342455/more-than-one-file-was-found-with-os-independent-path-meta-inf-license
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/license.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/notice.txt'
+        exclude 'META-INF/ASL2.0'
+        exclude("META-INF/*.kotlin_module")
+    }
+}
+
+dependencies {
+
+    implementation 'androidx.appcompat:appcompat:1.3.1'
+    implementation 'com.google.android.material:material:1.4.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
+    implementation 'com.google.android.gms:play-services-safetynet:18.0.0'
+    testImplementation 'junit:junit:4.+'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+
+    // compile 'io.github.dmitrikudrenko:emulator-detector:1.0.5'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.0'
+
+    // from: https://github.com/googlesamples/android-play-safetynet/blob/master/server
+    implementation 'com.google.http-client:google-http-client-jackson2:1.22.0'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.6'
+
+}
